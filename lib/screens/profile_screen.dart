@@ -721,7 +721,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Text('🌙', style: TextStyle(fontSize: 18)),
                   SizedBox(width: 8),
                   Text(
-                    'UYKU KALİTESİ & TOPARLANMA',
+                    'UYKU & DİNLENME PLANI',
                     style: TextStyle(
                       color: AppTheme.textPrimary,
                       fontSize: 12,
@@ -731,18 +731,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
-              if (latest != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryNeon.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    latest.recoveryBonus,
-                    style: const TextStyle(color: AppTheme.primaryNeon, fontSize: 10, fontWeight: FontWeight.bold),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.purpleXP.withOpacity(0.2),
+                  foregroundColor: const Color(0xFFC084FC),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: const BorderSide(color: AppTheme.purpleXP, width: 0.8),
                   ),
                 ),
+                icon: const Icon(Icons.alarm_add_rounded, size: 16),
+                label: const Text('Saat Ayarla', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                onPressed: () {
+                  SleepTrackingService.showManualSleepDialog(context, widget.profile, () {
+                    setState(() {});
+                  });
+                },
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -793,47 +799,183 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 10),
           ],
 
-          // Uyku Süresi Çubuk Grafiği (Son Kayıtlar)
-          if (history.isNotEmpty) ...[
-            const Text('GEÇMİŞ UYKU SÜRELERİ (SAAT)', style: TextStyle(color: AppTheme.textMuted, fontSize: 10, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 70,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: history.take(7).map((log) {
-                  final h = log.durationHours;
-                  final heightFactor = (h / 10.0).clamp(0.1, 1.0);
-                  Color barColor = Colors.redAccent;
-                  if (h >= 7.0) {
-                    barColor = AppTheme.primaryNeon;
-                  } else if (h >= 5.5) {
-                    barColor = AppTheme.primaryAccent;
+          // 7 Günlük Yatay Eksenli, Dikey Saat Göstergeli Profesyonel Uyku Tablosu
+          Builder(
+            builder: (context) {
+              final now = DateTime.now();
+              final dayNames = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+              
+              // Son 7 günün tarihlerini çıkar (Bugün en sağda)
+              final List<Map<String, dynamic>> last7DaysData = [];
+              for (int i = 6; i >= 0; i--) {
+                final d = now.subtract(Duration(days: i));
+                final dKey = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+                
+                // Bu tarihe denk gelen uyku kaydını bul
+                SleepLog? match;
+                for (var log in history) {
+                  final logKey = '${log.sleepEnd.year}-${log.sleepEnd.month.toString().padLeft(2, '0')}-${log.sleepEnd.day.toString().padLeft(2, '0')}';
+                  if (logKey == dKey) {
+                    match = log;
+                    break;
                   }
+                }
 
-                  return Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Text('${h}h', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 9, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 4),
-                          Container(
-                            height: 45 * heightFactor,
-                            decoration: BoxDecoration(
-                              color: barColor,
-                              borderRadius: BorderRadius.circular(4),
+                last7DaysData.add({
+                  'dayName': dayNames[d.weekday - 1],
+                  'dateStr': '${d.day}/${d.month}',
+                  'isToday': i == 0,
+                  'hours': match?.durationHours ?? 0.0,
+                });
+              }
+
+              return Container(
+                margin: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceLight,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.surfaceBorder),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          '7 GÜNLÜK UYKU ANALİZİ',
+                          style: TextStyle(color: AppTheme.textMuted, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0),
+                        ),
+                        Row(
+                          children: [
+                            Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppTheme.primaryNeon, shape: BoxShape.circle)),
+                            const SizedBox(width: 4),
+                            const Text('7h+ İdeal', style: TextStyle(color: AppTheme.textMuted, fontSize: 9)),
+                            const SizedBox(width: 10),
+                            Container(width: 8, height: 8, decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle)),
+                            const SizedBox(width: 4),
+                            const Text('<6h Az', style: TextStyle(color: AppTheme.textMuted, fontSize: 9)),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Tablo Gövdesi: Sol Dikey Saat Skalası (12h, 8h, 4h, 0h) + Sağ 7 Gün Çubukları
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        // Dikey Eksen (Y-Axis): Saat Skalası
+                        SizedBox(
+                          height: 110,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: const [
+                              Text('12h', style: TextStyle(color: AppTheme.textMuted, fontSize: 9, fontWeight: FontWeight.bold)),
+                              Text('8h', style: TextStyle(color: AppTheme.primaryNeon, fontSize: 9, fontWeight: FontWeight.bold)),
+                              Text('4h', style: TextStyle(color: AppTheme.textMuted, fontSize: 9, fontWeight: FontWeight.bold)),
+                              Text('0h', style: TextStyle(color: AppTheme.textMuted, fontSize: 9, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+
+                        // Dikey Ayırıcı Çizgi
+                        Container(
+                          width: 1,
+                          height: 110,
+                          color: AppTheme.surfaceBorder,
+                        ),
+                        const SizedBox(width: 8),
+
+                        // 7 Gün Çubukları ve Alt Gün İsimleri
+                        Expanded(
+                          child: SizedBox(
+                            height: 130,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: last7DaysData.map((data) {
+                                final double h = (data['hours'] as double).clamp(0.0, 14.0);
+                                final isToday = data['isToday'] as bool;
+                                final hasData = h > 0;
+                                final double barHeight = (h / 12.0).clamp(0.0, 1.0) * 85;
+
+                                Color barColor = AppTheme.surfaceBorder;
+                                if (h >= 7.5) {
+                                  barColor = AppTheme.primaryNeon;
+                                } else if (h >= 6.0) {
+                                  barColor = const Color(0xFF38BDF8);
+                                } else if (h > 0) {
+                                  barColor = const Color(0xFFEF4444);
+                                }
+
+                                return Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      // Saat Değeri
+                                      Text(
+                                        hasData ? '${h.toStringAsFixed(1)}h' : '-',
+                                        style: TextStyle(
+                                          color: isToday ? AppTheme.primaryNeon : (hasData ? AppTheme.textPrimary : AppTheme.textMuted),
+                                          fontSize: 9,
+                                          fontWeight: isToday ? FontWeight.w900 : FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+
+                                      // Çubuk Barı
+                                      Container(
+                                        width: 14,
+                                        height: hasData ? (barHeight < 8 ? 8 : barHeight) : 4,
+                                        decoration: BoxDecoration(
+                                          color: hasData ? barColor : AppTheme.surfaceBorder.withOpacity(0.5),
+                                          borderRadius: BorderRadius.circular(4),
+                                          boxShadow: hasData && isToday
+                                              ? [
+                                                  BoxShadow(
+                                                    color: barColor.withOpacity(0.4),
+                                                    blurRadius: 6,
+                                                    offset: const Offset(0, -1),
+                                                  )
+                                                ]
+                                              : null,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+
+                                      // Alt Yatay Bar (Günler)
+                                      Text(
+                                        data['dayName'],
+                                        style: TextStyle(
+                                          color: isToday ? AppTheme.primaryNeon : AppTheme.textMuted,
+                                          fontSize: 10,
+                                          fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                                        ),
+                                      ),
+                                      Text(
+                                        data['dateStr'],
+                                        style: TextStyle(
+                                          color: isToday ? AppTheme.primaryNeon : AppTheme.textMuted.withOpacity(0.6),
+                                          fontSize: 8,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
+                  ],
+                ),
+              );
+            },
+          ),
         ],
       ),
     );

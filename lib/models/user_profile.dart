@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 enum DayActivityStatus {
   completed,
   restFreeze,
@@ -50,6 +52,65 @@ class UserProfile {
     if (level < 10) return 'Ağırlık Canavarı';
     if (level < 15) return 'Titan';
     return 'Olympia Şampiyonu';
+  }
+
+  // 🛡️ Rekabetçi Rank Skoru (Total Tonnage + Seviye + Seri + Antrenman Puanı)
+  double get competitiveRankScore {
+    return (totalTonnageLiftedKg / 100) + (level * 150) + (streakDays * 25) + (totalWorkoutsCompleted * 50);
+  }
+
+  // 🏅 Yeni 9 Rütbeli ve 3 Kademeli Rekabetçi Lig Unvanı
+  String get competitiveRankTier {
+    final score = competitiveRankScore;
+    if (score < 150) return 'ODUN I';
+    if (score < 300) return 'ODUN II';
+    if (score < 500) return 'ODUN III';
+
+    if (score < 800) return 'BRONZ I';
+    if (score < 1200) return 'BRONZ II';
+    if (score < 1800) return 'BRONZ III';
+
+    if (score < 2500) return 'GÜMÜŞ I';
+    if (score < 3400) return 'GÜMÜŞ II';
+    if (score < 4500) return 'GÜMÜŞ III';
+
+    if (score < 6000) return 'ALTIN I';
+    if (score < 8000) return 'ALTIN II';
+    if (score < 10500) return 'ALTIN III';
+
+    if (score < 13500) return 'PLAT I';
+    if (score < 17000) return 'PLAT II';
+    if (score < 21000) return 'PLAT III';
+
+    if (score < 26000) return 'ELMAS I';
+    if (score < 32000) return 'ELMAS II';
+    if (score < 39000) return 'ELMAS III';
+
+    if (score < 48000) return 'ŞAMPİYON I';
+    if (score < 58000) return 'ŞAMPİYON II';
+    if (score < 70000) return 'ŞAMPİYON III';
+
+    if (score < 85000) return 'TİTAN I';
+    if (score < 105000) return 'TİTAN II';
+    if (score < 130000) return 'TİTAN III';
+
+    if (score < 165000) return 'OLİMPİYATÇI I';
+    if (score < 210000) return 'OLİMPİYATÇI II';
+    return 'OLİMPİYATÇI III';
+  }
+
+  // Rank Amblemi Rengi (Kademeler arasında renk farkı yok, ana rütbe rengi geçerli)
+  Color get competitiveRankColor {
+    final tier = competitiveRankTier;
+    if (tier.startsWith('ODUN')) return const Color(0xFF8D6E63);
+    if (tier.startsWith('BRONZ')) return const Color(0xFFCD7F32);
+    if (tier.startsWith('GÜMÜŞ')) return const Color(0xFFCBD5E1);
+    if (tier.startsWith('ALTIN')) return const Color(0xFFFBBF24);
+    if (tier.startsWith('PLAT')) return const Color(0xFF38BDF8);
+    if (tier.startsWith('ELMAS')) return const Color(0xFFA855F7);
+    if (tier.startsWith('ŞAMPİYON')) return const Color(0xFFEC4899);
+    if (tier.startsWith('TİTAN')) return const Color(0xFFEF4444);
+    return const Color(0xFF10B981); // Olimpiyatçı
   }
 
   double get xpProgress => targetXP > 0 ? (currentXP / targetXP).clamp(0.0, 1.0) : 0.0;

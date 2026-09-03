@@ -2,6 +2,14 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
+    <uses-permission android:name="android.permission.BODY_SENSORS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <application
         android:label="GYM"
         android:name="${applicationName}"
@@ -68,6 +76,40 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/quote_widget_info" />
         </receiver>
+
+        <!-- Android Homescreen Hızlı Su Takip Widget (+250ml) -->
+        <receiver
+            android:name=".WaterAppWidget"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.gympulse.gymapp.ADD_WATER_250" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/water_widget_info" />
+        </receiver>
+        <!-- Android Homescreen Strava Tarzı 2x4 Kardiyo & Hız Widget -->
+        <receiver
+            android:name=".CardioAppWidget"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.gympulse.gymapp.CARDIO_WIDGET_TOGGLE" />
+                <action android:name="com.gympulse.gymapp.CARDIO_SELECT_WALK" />
+                <action android:name="com.gympulse.gymapp.CARDIO_SELECT_RUN" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/cardio_widget_info" />
+        </receiver>
+
+        <!-- Canlı GPS Hız & Süre Foreground Servisi -->
+        <service
+            android:name=".CardioTrackingService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="location|health" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

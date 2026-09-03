@@ -2,15 +2,19 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../models/auth_user.dart';
 import '../../models/user_profile.dart';
+import '../../models/exercise.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
+import '../progress_analytics_screen.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   final UserProfile currentProfile;
+  final List<Exercise> exercises;
 
   const LeaderboardScreen({
     super.key,
     required this.currentProfile,
+    this.exercises = const [],
   });
 
   @override
@@ -259,40 +263,74 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Canlı Liderlik Tablosu'),
-        actions: [
-          IconButton(
-            tooltip: 'Yenile',
-            icon: const Icon(Icons.refresh_rounded, color: AppTheme.primaryNeon),
-            onPressed: _fetchLeaderboard,
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Topluluk & İstatistik'),
+          actions: [
+            IconButton(
+              tooltip: 'Yenile',
+              icon: const Icon(Icons.refresh_rounded, color: AppTheme.primaryNeon),
+              onPressed: _fetchLeaderboard,
+            ),
+          ],
+          bottom: const TabBar(
+            indicatorColor: AppTheme.primaryNeon,
+            labelColor: AppTheme.primaryNeon,
+            unselectedLabelColor: AppTheme.textMuted,
+            indicatorWeight: 3,
+            tabs: [
+              Tab(
+                icon: Icon(Icons.emoji_events_rounded, size: 20),
+                text: 'Liderlik Tablosu',
+              ),
+              Tab(
+                icon: Icon(Icons.auto_graph_rounded, size: 20),
+                text: 'Gelişim & PR',
+              ),
+            ],
           ),
-        ],
+        ),
+        body: TabBarView(
+          children: [
+            // 1. Sekme: Canlı Liderlik Sıralaması
+            _buildLeaderboardTab(),
+
+            // 2. Sekme: Gelişim & İstatistikler
+            ProgressAnalyticsContent(exercises: widget.exercises),
+          ],
+        ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryNeon))
-          : _leaders.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.cloud_off_rounded, size: 48, color: AppTheme.textMuted),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'VDS Sunucusuna bağlanılamadı.',
-                        style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 6),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryNeon, foregroundColor: AppTheme.background),
-                        onPressed: _fetchLeaderboard,
-                        child: const Text('Tekrar Dene'),
-                      ),
-                    ],
-                  ),
-                )
-              : CustomScrollView(
+    );
+  }
+
+  Widget _buildLeaderboardTab() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator(color: AppTheme.primaryNeon));
+    }
+    if (_leaders.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.cloud_off_rounded, size: 48, color: AppTheme.textMuted),
+            const SizedBox(height: 12),
+            const Text(
+              'VDS Sunucusuna bağlanılamadı.',
+              style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryNeon, foregroundColor: AppTheme.background),
+              onPressed: _fetchLeaderboard,
+              child: const Text('Tekrar Dene'),
+            ),
+          ],
+        ),
+      );
+    }
+    return CustomScrollView(
                   physics: const BouncingScrollPhysics(),
                   slivers: [
                     // Podyum (İlk 3 Sporcu)
@@ -473,8 +511,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       ),
                     ),
                   ],
-                ),
-    );
+                );
   }
 
   Widget _buildPodiumSpot(LeaderboardEntry entry, String medal, double height, Color color) {

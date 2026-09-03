@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/user_profile.dart';
+import '../services/program_service.dart';
 import '../theme/app_theme.dart';
+import '../screens/streak_detail_screen.dart';
 import 'streak_calendar_modal.dart';
 
 class StreakFlameWidget extends StatefulWidget {
@@ -45,14 +47,36 @@ class _StreakFlameWidgetState extends State<StreakFlameWidget> with SingleTicker
 
     // Günlük durum (son 7 gün)
     final now = DateTime.now();
+    final todayKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    
+    // Bugün dinlenme (rest) günü mü?
+    // 1. activityCalendar'da 'rest' olarak işaretli mi?
+    // 2. Veya kullanıcının aktif programında bugün egzersiz yok mu?
+    final calendarStatusToday = widget.profile.activityCalendar[todayKey];
+    bool isTodayRestDay = calendarStatusToday == 'rest';
+    if (!isTodayRestDay && calendarStatusToday == null) {
+      final activeProgram = ProgramService.getActiveProgram();
+      if (activeProgram != null) {
+        final matches = activeProgram.schedule.where((d) => d.dayOfWeek == now.weekday);
+        if (matches.isNotEmpty && matches.first.exercises.isEmpty) {
+          isTodayRestDay = true;
+        }
+      }
+    }
+
     final List<Map<String, dynamic>> last7Days = [];
     final dayNames = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
     for (int i = 6; i >= 0; i--) {
       final date = now.subtract(Duration(days: i));
       final dateKey = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-      final status = widget.profile.activityCalendar[dateKey];
+      String? status = widget.profile.activityCalendar[dateKey];
       final isToday = i == 0;
+
+      // Eğer bugün ise ve programda egzersiz yoksa otomatik 'rest' göster
+      if (isToday && status == null && isTodayRestDay) {
+        status = 'rest';
+      }
 
       last7Days.add({
         'dayName': dayNames[date.weekday - 1],
@@ -61,40 +85,72 @@ class _StreakFlameWidgetState extends State<StreakFlameWidget> with SingleTicker
       });
     }
 
+    // Kart temasını belirle (Rest day ise Buz Mavisi ❄️, Değilse Ateş 🔥 veya Koyu Boş)
+    final List<Color> gradientColors;
+    final Color borderColor;
+    final Color glowColor;
+    final String streakIcon;
+    final String streakSubtitle;
+    final Color streakColor;
+
+    if (isTodayRestDay) {
+      gradientColors = const [
+        Color(0xFF0C4A6E), // Koyu Buz Mavisi
+        Color(0xFF075985), // Buz Kristali
+      ];
+      borderColor = const Color(0xFF38BDF8);
+      glowColor = const Color(0xFF0284C7);
+      streakIcon = '❄️';
+      streakSubtitle = 'GÜN BUZU (REST DAY)';
+      streakColor = const Color(0xFF7DD3FC);
+    } else if (hasStreak) {
+      gradientColors = const [
+        Color(0xFF450A0A), // Koyu Ateş Kırmızısı
+        Color(0xFF1E1B4B), // Gece Mavisi
+      ];
+      borderColor = const Color(0xFFEF4444).withOpacity(0.6);
+      glowColor = const Color(0xFFEF4444);
+      streakIcon = '🔥';
+      streakSubtitle = 'GÜN ATEŞİ';
+      streakColor = const Color(0xFFFCA5A5);
+    } else {
+      gradientColors = const [
+        Color(0xFF1E293B),
+        Color(0xFF0F172A),
+      ];
+      borderColor = AppTheme.surfaceBorder;
+      glowColor = Colors.transparent;
+      streakIcon = '⚪';
+      streakSubtitle = 'GÜN ATEŞİ';
+      streakColor = AppTheme.textMuted;
+    }
+
     return GestureDetector(
       onTap: () {
-        showModalBottomSheet(
-          context: context,
-          backgroundColor: Colors.transparent,
-          isScrollControlled: true,
-          builder: (context) => StreakCalendarModal(profile: widget.profile),
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => StreakDetailScreen(profile: widget.profile),
+          ),
         );
       },
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: hasStreak
-                ? [
-                    const Color(0xFF450A0A), // Koyu Ateş Kırmızısı
-                    const Color(0xFF1E1B4B), // Gece Mavisi
-                  ]
-                : [
-                    const Color(0xFF1E293B),
-                    const Color(0xFF0F172A),
-                  ],
+            colors: gradientColors,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: hasStreak ? const Color(0xFFEF4444).withOpacity(0.6) : AppTheme.surfaceBorder,
+            color: borderColor,
             width: 1.5,
           ),
-          boxShadow: hasStreak
+          boxShadow: (hasStreak || isTodayRestDay)
               ? [
                   BoxShadow(
-                    color: const Color(0xFFEF4444).withOpacity(0.2),
+                    color: glowColor.withOpacity(0.25),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   )
@@ -111,15 +167,15 @@ class _StreakFlameWidgetState extends State<StreakFlameWidget> with SingleTicker
                 Row(
                   children: [
                     ScaleTransition(
-                      scale: hasStreak ? _scaleAnimation : const AlwaysStoppedAnimation(1.0),
+                      scale: (hasStreak || isTodayRestDay) ? _scaleAnimation : const AlwaysStoppedAnimation(1.0),
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: (hasStreak ? const Color(0xFFEF4444) : Colors.grey).withOpacity(0.2),
+                          color: (isTodayRestDay ? const Color(0xFF38BDF8) : (hasStreak ? const Color(0xFFEF4444) : Colors.grey)).withOpacity(0.2),
                           shape: BoxShape.circle,
                         ),
                         child: Text(
-                          hasStreak ? '🔥' : '⚪',
+                          streakIcon,
                           style: const TextStyle(fontSize: 22),
                         ),
                       ),
@@ -129,9 +185,9 @@ class _StreakFlameWidgetState extends State<StreakFlameWidget> with SingleTicker
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          hasStreak ? 'DİSİPLİN SERİSİ (STREAK)' : 'STREAK BAŞLAT',
+                          isTodayRestDay ? 'RECOVERY MODU (REST DAY)' : (hasStreak ? 'DİSİPLİN SERİSİ (STREAK)' : 'STREAK BAŞLAT'),
                           style: TextStyle(
-                            color: hasStreak ? const Color(0xFFFCA5A5) : AppTheme.textMuted,
+                            color: streakColor,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.2,
@@ -145,16 +201,16 @@ class _StreakFlameWidgetState extends State<StreakFlameWidget> with SingleTicker
                             Text(
                               '$streak',
                               style: TextStyle(
-                                color: hasStreak ? const Color(0xFFEF4444) : AppTheme.textPrimary,
+                                color: isTodayRestDay ? const Color(0xFF38BDF8) : (hasStreak ? const Color(0xFFEF4444) : AppTheme.textPrimary),
                                 fontSize: 24,
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              'GÜN ATEŞİ',
+                              streakSubtitle,
                               style: TextStyle(
-                                color: hasStreak ? const Color(0xFFFCA5A5) : AppTheme.textMuted,
+                                color: streakColor,
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
                               ),

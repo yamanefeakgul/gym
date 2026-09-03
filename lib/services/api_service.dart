@@ -4,6 +4,8 @@ import '../models/auth_user.dart';
 import '../models/workout_program.dart';
 import '../models/user_profile.dart';
 import '../models/exercise.dart';
+import '../models/cardio_workout_log.dart';
+import '../models/body_measurement.dart';
 
 class ApiService {
   static String baseUrl = 'http://166.1.94.116:3000';
@@ -144,6 +146,68 @@ class ApiService {
     } catch (e) {
       // ignore
     }
+    return [];
+  }
+
+  // 7. KARDİYO KOŞU GEÇMİŞİNİ SUNUCUYA KAYDET
+  static Future<bool> saveCardioLog(String username, CardioWorkoutLog log) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/cardio'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': username,
+          'log': log.toJson(),
+        }),
+      ).timeout(const Duration(seconds: 4));
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // 8. KARDİYO KOŞU GEÇMİŞİNİ ÇEK
+  static Future<List<CardioWorkoutLog>> fetchCardioLogs(String username) async {
+    try {
+      final res = await http.get(
+        Uri.parse('$baseUrl/api/cardio/$username'),
+      ).timeout(const Duration(seconds: 4));
+      if (res.statusCode == 200) {
+        final List list = jsonDecode(res.body);
+        return list.map((e) => CardioWorkoutLog.fromJson(e)).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  // 9. BODYGRAPH VÜCUT ÖLÇÜM GEÇMİŞİNİ SUNUCUYA KAYDET
+  static Future<bool> saveBodyMeasurements(String username, List<BodyMeasurementEntry> entries) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/bodygraph'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': username,
+          'measurements': entries.map((e) => e.toJson()).toList(),
+        }),
+      ).timeout(const Duration(seconds: 4));
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // 10. BODYGRAPH VÜCUT ÖLÇÜM GEÇMİŞİNİ ÇEK
+  static Future<List<BodyMeasurementEntry>> fetchBodyMeasurements(String username) async {
+    try {
+      final res = await http.get(
+        Uri.parse('$baseUrl/api/bodygraph/$username'),
+      ).timeout(const Duration(seconds: 4));
+      if (res.statusCode == 200) {
+        final List list = jsonDecode(res.body);
+        return list.map((e) => BodyMeasurementEntry.fromJson(e)).toList();
+      }
+    } catch (_) {}
     return [];
   }
 }

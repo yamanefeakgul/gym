@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/exercise.dart';
+import '../models/rank_tier.dart';
 import '../theme/app_theme.dart';
 import '../widgets/mini_progress_chart.dart';
 import 'programs/programs_list_tab.dart';
@@ -39,7 +40,7 @@ class _LibraryScreenContainerState extends State<LibraryScreenContainer> with Si
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kütüphane & Programlar'),
+        title: const Text('Programlar & Kütüphane'),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppTheme.primaryNeon,
@@ -47,19 +48,19 @@ class _LibraryScreenContainerState extends State<LibraryScreenContainer> with Si
           unselectedLabelColor: AppTheme.textMuted,
           labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           tabs: const [
-            Tab(icon: Icon(Icons.fitness_center_rounded), text: 'Egzersizler'),
             Tab(icon: Icon(Icons.calendar_month_rounded), text: 'Programlar'),
+            Tab(icon: Icon(Icons.fitness_center_rounded), text: 'Egzersizler'),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          ExerciseLibraryTab(exercises: widget.exercises),
           ProgramsListTab(
             allExercises: widget.exercises,
             onProgramSelected: widget.onProgramChanged,
           ),
+          ExerciseLibraryTab(exercises: widget.exercises),
         ],
       ),
     );
@@ -146,17 +147,21 @@ class _ExerciseLibraryTabState extends State<ExerciseLibraryTab> {
                     final isExpanded = _expandedState[exercise.id] ?? false;
                     final hasHistory = exercise.history.isNotEmpty;
                     final pr = exercise.personalRecordWeight;
+                    final rank = GymRank.forExercise(exercise);
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
                         color: AppTheme.surface,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: isExpanded ? AppTheme.primaryNeon : AppTheme.surfaceBorder),
+                        border: Border.all(
+                          color: isExpanded ? rank.color.withOpacity(0.8) : AppTheme.surfaceBorder,
+                          width: isExpanded ? 1.5 : 1,
+                        ),
                       ),
                       child: Column(
                         children: [
-                          // Egzersiz Başlık Satırı
+                          // Egzersiz Başlık Satırı (Tıklanınca aşağı açılır)
                           InkWell(
                             borderRadius: BorderRadius.circular(16),
                             onTap: () {
@@ -172,8 +177,9 @@ class _ExerciseLibraryTabState extends State<ExerciseLibraryTab> {
                                     width: 44,
                                     height: 44,
                                     decoration: BoxDecoration(
-                                      color: AppTheme.primaryNeon.withOpacity(0.12),
+                                      color: rank.color.withOpacity(0.12),
                                       borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: rank.color.withOpacity(0.25)),
                                     ),
                                     child: Center(
                                       child: Text(exercise.muscleGroup.emoji, style: const TextStyle(fontSize: 20)),
@@ -192,36 +198,45 @@ class _ExerciseLibraryTabState extends State<ExerciseLibraryTab> {
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                        const SizedBox(height: 2),
+                                        const SizedBox(height: 3),
                                         Text(
-                                          '${exercise.muscleGroup.displayName} • ${exercise.equipment}',
+                                          exercise.targetArea.isNotEmpty
+                                              ? '${exercise.targetArea} • ${exercise.equipment}'
+                                              : '${exercise.muscleGroup.displayName} • ${exercise.equipment}',
                                           style: const TextStyle(color: AppTheme.textMuted, fontSize: 11),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ],
                                     ),
                                   ),
-                                  // İstatistik / Grafik Aç Kapa Butonu
+                                  const SizedBox(width: 8),
+                                  // 🏅 Sağ Tarafta Rank Rozeti (Gelişim butonu yerine)
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                     decoration: BoxDecoration(
-                                      color: isExpanded ? AppTheme.primaryNeon : AppTheme.surfaceLight,
-                                      borderRadius: BorderRadius.circular(8),
+                                      color: rank.color.withOpacity(0.12),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: rank.color.withOpacity(0.4)),
                                     ),
                                     child: Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(
-                                          Icons.auto_graph_rounded,
-                                          color: isExpanded ? AppTheme.background : AppTheme.primaryNeon,
-                                          size: 16,
-                                        ),
-                                        const SizedBox(width: 4),
+                                        Text(rank.emoji, style: const TextStyle(fontSize: 14)),
+                                        const SizedBox(width: 5),
                                         Text(
-                                          'Gelişim',
+                                          rank.displayName,
                                           style: TextStyle(
-                                            color: isExpanded ? AppTheme.background : AppTheme.primaryNeon,
+                                            color: rank.color,
                                             fontSize: 11,
                                             fontWeight: FontWeight.bold,
                                           ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Icon(
+                                          isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                                          color: rank.color,
+                                          size: 16,
                                         ),
                                       ],
                                     ),

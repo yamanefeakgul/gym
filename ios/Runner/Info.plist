@@ -20,6 +20,19 @@
 	<string>Profil fotoğrafınızı çekmek için kamera erişimi gereklidir.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Profil fotoğrafınızı seçmek için galeri erişimi gereklidir.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Günlük adım ve yakılan kalori takibiniz için hareket sensörüne erişim gereklidir.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Kardiyo koşu ve yürüyüş hızınızı (km/h) ve mesafenizi anlık hesaplamak için konum izni gereklidir.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Uygulama arka plandayken koşu rotanızı ve canlı hızınızı takip etmek için konum izni gereklidir.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>processing</string>
+		<string>remote-notification</string>
+		<string>location</string>
+	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

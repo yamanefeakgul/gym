@@ -85,6 +85,7 @@ class Exercise {
   final MuscleGroup muscleGroup;
   final String equipment;
   final String instructions;
+  final String targetArea;
   final List<WeightLogEntry> history;
 
   Exercise({
@@ -93,6 +94,7 @@ class Exercise {
     required this.muscleGroup,
     required this.equipment,
     this.instructions = '',
+    this.targetArea = '',
     List<WeightLogEntry>? history,
   }) : history = history ?? [];
 

@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.widget.RemoteViews
 import kotlin.random.Random
 
@@ -18,15 +19,73 @@ class QuoteAppWidget : AppWidgetProvider() {
     }
 
     companion object {
+        data class MotivationQuote(
+            val quote: String,
+            val author: String,
+            val isAtaturk: Boolean = false
+        )
+
         private val quotes = arrayOf(
-            Pair("Stay Hard! Zihnin pes etmek istediğinde, kapasitenin sadece %40'ını kullanmışsındır.", "David Goggins"),
-            Pair("Aynaya bak ve kendine doğruyu söyle. Kimse seni kurtarmaya gelmeyecek!", "David Goggins"),
-            Pair("Disiplin, canın istemediği anlarda bile yapman gerekeni yapmaktır.", "David Goggins"),
-            Pair("Acı geçicidir. Pes etmek ise sonsuza kadar sürer.", "David Goggins"),
-            Pair("Konfor alanı hayallerin öldüğü yerdir. Kendini zorla!", "David Goggins"),
-            Pair("Bugün yapmadığın antrenmanın telafisi yarın olmaz. Şimdi kalk ve başla!", "David Goggins"),
-            Pair("Ruhunu zırh gibi sertleştir. Demir bükülür ama sen bükülmezsin.", "David Goggins"),
-            Pair("Bahane üretmek yerine ter akıt. Terin sesi bahanelerden daha gür çıkar.", "David Goggins")
+            // 🇹🇷 Mustafa Kemal Atatürk Sözleri (Yeşil - Sarı Özel Renk)
+            MotivationQuote(
+                "Ben sporcunun zeki, çevik ve aynı zamanda ahlaklısını severim.",
+                "Mustafa Kemal Atatürk",
+                isAtaturk = true
+            ),
+            MotivationQuote(
+                "Muhtaç olduğun kudret, damarlarındaki asil kanda mevcuttur!",
+                "Mustafa Kemal Atatürk",
+                isAtaturk = true
+            ),
+            MotivationQuote(
+                "Zafer, 'Zafer benimdir' diyebilenindir. Başarı ise, 'Başaracağım' diye başlayanın!",
+                "Mustafa Kemal Atatürk",
+                isAtaturk = true
+            ),
+            MotivationQuote(
+                "Sağlam kafa, sağlam vücutta bulunur.",
+                "Mustafa Kemal Atatürk",
+                isAtaturk = true
+            ),
+            MotivationQuote(
+                "Dinlenmemek üzere yürümeye karar verenler, asla ve asla yorulmazlar.",
+                "Mustafa Kemal Atatürk",
+                isAtaturk = true
+            ),
+
+            // ⚡ Efsanevi Sporcu ve Düşünür Sözleri
+            MotivationQuote(
+                "Son 3-4 tekrar kasın büyümesini sağlar. Şampiyonları diğerlerinden ayıran o acı eşiğidir.",
+                "Arnold Schwarzenegger"
+            ),
+            MotivationQuote(
+                "Günün her dakikasından nefret ettim ama 'Vazgeçme' dedim. Şimdi acı çek ve ömrünün kalanını şampiyon olarak yaşa!",
+                "Muhammed Ali"
+            ),
+            MotivationQuote(
+                "Korkularının üzerine gitmezsen, zihnin sana asla ait olmaz.",
+                "Mike Tyson"
+            ),
+            MotivationQuote(
+                "Stay Hard! Zihnin pes etmek istediğinde, kapasitenin sadece %40'ını kullanmışsındır.",
+                "David Goggins"
+            ),
+            MotivationQuote(
+                "Disiplin, canın istemediği anlarda bile yapman gerekeni yapmaktır.",
+                "David Goggins"
+            ),
+            MotivationQuote(
+                "Acı geçicidir, pes etmek sonsuza kadar sürer.",
+                "Lance Armstrong"
+            ),
+            MotivationQuote(
+                "Kaybetmekten korkma; denememekten kork. Sınırlarını sadece sen belirlersin.",
+                "Kobe Bryant"
+            ),
+            MotivationQuote(
+                "Bahane üretmek yerine ter akıt. Terin sesi bahanelerden daha gür çıkar.",
+                "David Goggins"
+            )
         )
 
         fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
@@ -34,8 +93,17 @@ class QuoteAppWidget : AppWidgetProvider() {
             val selected = quotes[randomIndex]
 
             val views = RemoteViews(context.packageName, R.layout.quote_app_widget)
-            views.setTextViewText(R.id.widget_quote_text, selected.first)
-            views.setTextViewText(R.id.widget_quote_author, "— " + selected.second)
+            views.setTextViewText(R.id.widget_quote_text, selected.quote)
+            views.setTextViewText(R.id.widget_quote_author, "— " + selected.author)
+
+            if (selected.isAtaturk) {
+                // 🇹🇷 Atatürk Sözleri için Özel Yeşil & Sarı Vurgusu
+                views.setTextColor(R.id.widget_quote_text, Color.parseColor("#FACC15")) // Parlak Altın Sarı
+                views.setTextColor(R.id.widget_quote_author, Color.parseColor("#00E676")) // Neon Yeşil
+            } else {
+                views.setTextColor(R.id.widget_quote_text, Color.parseColor("#38BDF8")) // Açık Mavi
+                views.setTextColor(R.id.widget_quote_author, Color.parseColor("#00E676")) // Neon Yeşil
+            }
 
             val intent = Intent(context, MainActivity::class.java)
             val pendingIntent = PendingIntent.getActivity(

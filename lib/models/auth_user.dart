@@ -137,4 +137,22 @@ class LeaderboardEntry {
         avatarBase64: json['avatarBase64'],
         isCurrentUser: isCurrentUser,
       );
+
+  double get competitiveRankScore {
+    return (totalTonnage * 10) + (level * 150) + (streakDays * 25) + (totalWorkoutsCompleted * 50);
+  }
+
+  String get competitiveRankTier {
+    final score = competitiveRankScore;
+    if (score < 400) return 'BRONZE I';
+    if (score < 800) return 'BRONZE II';
+    if (score < 1400) return 'SILVER I';
+    if (score < 2200) return 'SILVER II';
+    if (score < 3500) return 'GOLD I';
+    if (score < 5000) return 'GOLD II';
+    if (score < 7500) return 'PLATINUM I';
+    if (score < 10000) return 'PLATINUM II';
+    if (score < 15000) return 'DIAMOND';
+    return 'TITAN OLYMPIA';
+  }
 }

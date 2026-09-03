@@ -8,7 +8,7 @@ import '../theme/app_theme.dart';
 
 class UpdateService {
   static const String serverBaseUrl = 'http://166.1.94.116:3000';
-  static const String currentVersion = '1.0.5';
+  static const String currentVersion = '1.0.8';
   static const MethodChannel _updaterChannel = MethodChannel('com.gympulse.gymapp/updater');
 
   // 🌟 Uygulama her açıldığında Bilinmeyen Kaynaklardan Yükleme & Bildirim İzinlerini Kontrol Et

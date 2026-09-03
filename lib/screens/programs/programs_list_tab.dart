@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../models/exercise.dart';
 import '../../models/workout_program.dart';
+import '../../models/user_profile.dart';
 import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
 import '../../services/program_service.dart';
+import '../../services/storage_service.dart';
 import '../../theme/app_theme.dart';
 import 'create_program_screen.dart';
 
@@ -46,11 +49,27 @@ class _ProgramsListTabState extends State<ProgramsListTab> {
     await ProgramService.setActiveProgram(program);
     widget.onProgramSelected();
     setState(() {});
+
+    // 🌟 SEÇİLEN PROGRAMI VDS BULUT SUNUCUSUNA KAYDET
+    final activeUser = AuthService.currentUser;
+    if (activeUser != null) {
+      final profile = await StorageService.loadUserProfile() ??
+          UserProfile(name: activeUser.username, level: activeUser.level);
+      ApiService.syncUserData(
+        activeUser.id,
+        profile,
+        program.id,
+        widget.allExercises,
+        profile.unlockedBadges,
+        customPrograms: ProgramService.customPrograms,
+      );
+    }
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '⚡ "${program.title}" aktif antrenman programınız olarak ayarlandı!',
+            '⚡ "${program.title}" aktif antrenman programınız olarak ayarlandı ve sunucuya kaydedildi!',
             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           backgroundColor: const Color(0xFF16A34A), // Canlı Yeşil

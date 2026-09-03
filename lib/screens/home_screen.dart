@@ -1,18 +1,22 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../models/user_profile.dart';
 import '../models/exercise.dart';
 import '../models/workout_program.dart';
 import '../services/program_service.dart';
 import '../theme/app_theme.dart';
-import '../widgets/user_level_header.dart';
 import '../widgets/streak_flame_widget.dart';
 import '../widgets/exercise_card.dart';
+import '../widgets/health_dashboard_card.dart';
+import '../services/sleep_tracking_service.dart';
+import 'streak_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final UserProfile profile;
   final List<Exercise> exercises;
   final Function(String exerciseId, double weight, int reps, int sets) onLogWeight;
   final VoidCallback onNavigateToPrograms;
+  final VoidCallback? onNavigateToProfile;
 
   const HomeScreen({
     super.key,
@@ -20,6 +24,7 @@ class HomeScreen extends StatefulWidget {
     required this.exercises,
     required this.onLogWeight,
     required this.onNavigateToPrograms,
+    this.onNavigateToProfile,
   });
 
   @override
@@ -48,72 +53,177 @@ class _HomeScreenState extends State<HomeScreen> {
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-            // Top App Bar: GYM
+            // Top App Bar: En Solda Profil Avatarı + Seviye Barı (Lv. X) & En Sağda Tonaj ve Seri (Streak)
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppTheme.primaryNeon, AppTheme.primaryAccent],
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.fitness_center, color: AppTheme.background, size: 20),
-                        ),
-                        const SizedBox(width: 10),
-                        const Text(
-                          'GYM',
-                          style: TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 2.0,
-                          ),
-                        ),
-                      ],
-                    ),
-                    // Tonaj Özeti
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: AppTheme.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTheme.surfaceBorder),
-                      ),
+                    // Sol: Profil Avatarı & Seviye Barı (Lv. X)
+                    GestureDetector(
+                      onTap: widget.onNavigateToProfile,
                       child: Row(
                         children: [
-                          const Icon(Icons.line_weight_rounded, color: AppTheme.primaryAccent, size: 16),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${(widget.profile.totalTonnageLiftedKg / 1000).toStringAsFixed(1)} Ton',
-                            style: const TextStyle(
-                              color: AppTheme.primaryAccent,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                          // Profil Avatarı
+                          Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: const LinearGradient(
+                                colors: [AppTheme.primaryNeon, AppTheme.primaryAccent],
+                              ),
+                              border: Border.all(color: AppTheme.primaryNeon, width: 1.8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppTheme.primaryNeon.withOpacity(0.35),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
+                            child: ClipOval(
+                              child: (widget.profile.avatarBase64 != null && widget.profile.avatarBase64!.isNotEmpty)
+                                  ? Image.memory(
+                                      base64Decode(widget.profile.avatarBase64!),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : const Center(
+                                      child: Text('⚔️', style: TextStyle(fontSize: 20)),
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+
+                          // Seviye Barı & Üstünde Lv. X Yazısı
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    'Lv. ${widget.profile.level}',
+                                    style: const TextStyle(
+                                      color: AppTheme.primaryNeon,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '${widget.profile.currentXP}/${widget.profile.targetXP} XP',
+                                    style: const TextStyle(
+                                      color: AppTheme.textMuted,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 3),
+                              // XP Progress Bar
+                              Container(
+                                width: 85,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.surfaceBorder,
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(3),
+                                  child: LinearProgressIndicator(
+                                    value: widget.profile.xpProgress,
+                                    backgroundColor: Colors.transparent,
+                                    valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryNeon),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
+                    ),
+
+                    // Sağ: Tonaj + Spor Serisi (Streak)
+                    Row(
+                      children: [
+                        // Tonaj Çipi
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppTheme.surface,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppTheme.surfaceBorder),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.line_weight_rounded, color: AppTheme.primaryAccent, size: 14),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${(widget.profile.totalTonnageLiftedKg / 1000).toStringAsFixed(1)} T',
+                                style: const TextStyle(
+                                  color: AppTheme.primaryAccent,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+
+                        // Spor Serisi Çipi (Streak - Tıklanınca Detay Sayfası Açılır)
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => StreakDetailScreen(profile: widget.profile),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppTheme.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: widget.profile.streakDays > 0 ? const Color(0xFFEF4444).withOpacity(0.6) : AppTheme.surfaceBorder,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Text(widget.profile.streakDays > 0 ? '🔥' : '⚪', style: const TextStyle(fontSize: 13)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${widget.profile.streakDays}',
+                                  style: TextStyle(
+                                    color: widget.profile.streakDays > 0 ? const Color(0xFFFCA5A5) : AppTheme.textMuted,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
             ),
 
-            // Profile & Level Header
+            // 🚶💧 ADIM SAYAR, KALORİ & SU TAKİP DASHBOARD KARTI
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                child: UserLevelHeader(profile: widget.profile),
-              ),
+              child: HealthDashboardCard(profile: widget.profile),
             ),
+
+            // 🌙 UYKU KALİTESİ & GÜÇ TAVSİYESİ BANNER'I
+            _buildSleepPerformanceBanner(),
 
             // 🔥 YENİ ÖZEL STREAK FLAME WIDGET'I (Ana Ekranda Parlayan Ateş & Hafta Şeridi)
             SliverToBoxAdapter(
@@ -367,6 +477,61 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
             const SliverToBoxAdapter(child: SizedBox(height: 80)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSleepPerformanceBanner() {
+    final history = SleepTrackingService.sleepHistory;
+    if (history.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+
+    final lastSleep = history.last;
+    final hours = lastSleep.durationHours;
+
+    final isLowSleep = hours < 6.5;
+    final isGoodSleep = hours >= 7.5;
+
+    final color = isGoodSleep ? AppTheme.primaryNeon : (isLowSleep ? const Color(0xFFEF4444) : const Color(0xFFFACC15));
+    final icon = isGoodSleep ? '⚡' : (isLowSleep ? '⚠️' : '🔋');
+    final title = isGoodSleep ? 'GÜÇ MODU: TİTAN PERFORMANS' : (isLowSleep ? 'DİKKAT: YETERSİZ UYKU & GÜÇ DÜŞÜŞÜ' : 'DENGELİ RECOVERY');
+    final desc = isGoodSleep
+        ? 'Dün gece ${hours.toStringAsFixed(1)} saat uyudun! Büyüme hormonu zirvede, bugün ağırlıkları parçalama ve PR kırma günü!'
+        : (isLowSleep
+            ? 'Dün gece sadece ${hours.toStringAsFixed(1)} saat uyudun. Sinir sistemi tam toparlanamadı, bugün formuna dikkat et ve yarın daha ağır kaldırmak için erken uyu!'
+            : 'Dün gece ${hours.toStringAsFixed(1)} saat uyudun. Antrenmanda istikrarlı ve kontrollü tekrarlara odaklan.');
+
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(0.5), width: 1.2),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(icon, style: const TextStyle(fontSize: 22)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    desc,
+                    style: const TextStyle(color: AppTheme.textPrimary, fontSize: 12, height: 1.3),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

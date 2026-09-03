@@ -14,15 +14,20 @@ import 'screens/home_screen.dart';
 import 'screens/exercise_library_screen.dart';
 import 'screens/progress_analytics_screen.dart';
 import 'screens/skills/calisthenics_skill_tree_screen.dart';
-import 'screens/community/leaderboard_screen.dart';
+import 'screens/community/ranks_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/cardio/cardio_screen.dart';
 import 'services/sleep_tracking_service.dart';
+import 'services/health_tracking_service.dart';
+import 'services/cardio_tracking_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AuthService.init();
   await ProgramService.init();
   await SleepTrackingService.init();
+  await HealthTrackingService.init();
+  await CardioTrackingService.init();
   runApp(const GymPulseApp());
 }
 
@@ -264,6 +269,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             _currentIndex = 1;
           });
         },
+        onNavigateToProfile: () {
+          setState(() {
+            _currentIndex = 5; // Profil Sekmesi
+          });
+        },
       ),
       LibraryScreenContainer(
         exercises: _exercises,
@@ -279,11 +289,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       CalisthenicsSkillTreeScreen(
         profile: _profile,
       ),
-      ProgressAnalyticsScreen(
-        exercises: _exercises,
-      ),
-      LeaderboardScreen(
+      CardioScreen(
         currentProfile: _profile,
+      ),
+      RanksScreen(
+        currentProfile: _profile,
+        exercises: _exercises,
       ),
       ProfileScreen(
         profile: _profile,
@@ -325,8 +336,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           unselectedLabelStyle: const TextStyle(fontSize: 9),
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.fitness_center),
-              label: 'Antrenman',
+              icon: Text('🏠', style: TextStyle(fontSize: 18)),
+              activeIcon: Text('🏠', style: TextStyle(fontSize: 20)),
+              label: 'Ana Sayfa',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.menu_book_rounded),
@@ -337,12 +349,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               label: 'Skill Tree',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.auto_graph_rounded),
-              label: 'İstatistik',
+              icon: Icon(Icons.directions_run_rounded),
+              label: 'Kardiyo',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.emoji_events_rounded),
-              label: 'Liderlik',
+              icon: Icon(Icons.military_tech_rounded),
+              label: 'Rank',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_rounded),

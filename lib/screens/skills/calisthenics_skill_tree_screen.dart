@@ -28,10 +28,10 @@ class _CalisthenicsSkillTreeScreenState extends State<CalisthenicsSkillTreeScree
     super.initState();
     _nodes = CalisthenicsVisualTreeData.getNodes();
     _syncWithProfile();
-    // Başlangıçta ağacın merkezine odaklan
+    // Başlangıçta ağacın merkezine ve İp Atlama / Calisthenics dallarına dengeli odaklan
     _transformationController.value = Matrix4.identity()
-      ..scale(0.85)
-      ..translate(-120.0, -100.0);
+      ..scale(0.60)
+      ..translate(-250.0, -150.0);
   }
 
   void _syncWithProfile() {
@@ -236,8 +236,8 @@ class _CalisthenicsSkillTreeScreenState extends State<CalisthenicsSkillTreeScree
             onPressed: () {
               setState(() {
                 _transformationController.value = Matrix4.identity()
-                  ..scale(0.85)
-                  ..translate(-120.0, -100.0);
+                  ..scale(0.60)
+                  ..translate(-250.0, -150.0);
               });
             },
           ),
@@ -249,12 +249,12 @@ class _CalisthenicsSkillTreeScreenState extends State<CalisthenicsSkillTreeScree
           InteractiveViewer(
             transformationController: _transformationController,
             boundaryMargin: const EdgeInsets.all(500),
-            minScale: 0.4,
+            minScale: 0.35,
             maxScale: 2.5,
             constrained: false,
             child: SizedBox(
-              width: 1000,
-              height: 1050,
+              width: 1500,
+              height: 1350,
               child: CustomPaint(
                 painter: SkillTreeCanvasPainter(nodes: _nodes),
                 child: Stack(
@@ -390,13 +390,14 @@ class SkillTreeCanvasPainter extends CustomPainter {
       }
     }
 
-    // 2. BÖLGE İSİMLERİNİ YAZ (Görsel 1'deki gibi)
-    _drawBranchTitle(canvas, 'HORIZONTAL PUSH', const Offset(120, 680));
-    _drawBranchTitle(canvas, 'VERTICAL PUSH', const Offset(280, 100));
-    _drawBranchTitle(canvas, 'CORE', const Offset(480, 480));
-    _drawBranchTitle(canvas, 'LEGS', const Offset(560, 830));
-    _drawBranchTitle(canvas, 'VERTICAL PULL', const Offset(820, 690));
-    _drawBranchTitle(canvas, 'HORIZONTAL PULL', const Offset(680, 20));
+    // 2. BÖLGE İSİMLERİNİ YAZ
+    _drawBranchTitle(canvas, '🪢 JUMP ROPE & FREESTYLE', const Offset(620, 25));
+    _drawBranchTitle(canvas, '🏹 VERTICAL PUSH (AMUT)', const Offset(120, 120));
+    _drawBranchTitle(canvas, '🦅 VERTICAL PULL (BARFİKS)', const Offset(1050, 190));
+    _drawBranchTitle(canvas, '🛡️ HORIZONTAL PUSH (PLANCHE)', const Offset(50, 680));
+    _drawBranchTitle(canvas, '⛓️ HORIZONTAL PULL (LEVER)', const Offset(1050, 930));
+    _drawBranchTitle(canvas, '🧱 CORE (MERKEZ)', const Offset(680, 660));
+    _drawBranchTitle(canvas, '🦵 LEGS (BACAK)', const Offset(700, 1210));
   }
 
   void _drawBranchTitle(Canvas canvas, String text, Offset position) {
